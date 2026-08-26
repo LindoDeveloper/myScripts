@@ -1,0 +1,46 @@
+--!strict
+local TpModule = {}
+local originalCanCollide: {[BasePart]: boolean} = {}
+
+function TpModule.Attach(creator: Model, guest: Model)
+	local creatorRoot = creator:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local guestRoot = guest:FindFirstChild("HumanoidRootPart") :: BasePart?
+
+	if not creatorRoot or not guestRoot then return end
+
+	guestRoot.CFrame = creatorRoot.CFrame
+
+	local function disableCollision(model: Model)
+		for _, desc in ipairs(model:GetDescendants()) do
+			if desc:IsA("BasePart") then
+				local part = desc :: BasePart
+				if part.Name ~= "HumanoidRootPart" then
+					originalCanCollide[part] = part.CanCollide
+					part.CanCollide = false
+				end
+			end
+		end
+	end
+
+	disableCollision(creator)
+	disableCollision(guest)
+end
+
+function TpModule.Detach(creator: Model, guest: Model)
+	local function restoreCollision(model: Model)
+		for _, desc in ipairs(model:GetDescendants()) do
+			if desc:IsA("BasePart") then
+				local part = desc :: BasePart
+				if originalCanCollide[part] ~= nil then
+					part.CanCollide = originalCanCollide[part]
+					originalCanCollide[part] = nil
+				end
+			end
+		end
+	end
+
+	restoreCollision(creator)
+	restoreCollision(guest)
+end
+
+return TpModule
